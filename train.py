@@ -6,77 +6,61 @@ from torch import nn
 from data import validdataloader, dataset_sizes, testdataloader, traindataloader
 from ResNet152 import net
 
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),lr=0.0001,momentum=0.9)
+loss = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.0001, momentum=0.9)
 device = torch.device("cpu")
 
 
-
-def valid_model(model, criterion):
-    best_acc = 0.0
+def test(model, mode):
     print('-' * 10)
-
-    running_loss = 0.0
-    running_corrects = 0
+    total_loss = 0.0
+    total_corrects = 0
     model = model.to(device)
-    for inputs, labels in validdataloader:
+    if mode == 'valid':
+        loader = validdataloader
+    elif mode == 'test':
+        loader = testdataloader
+    else:
+        loader = None
+    for inputs, labels in loader:
         inputs = inputs.to(device)
         labels = labels.to(device)
         model.eval()
         with torch.no_grad():
             outputs = model(inputs)
-        loss = criterion(outputs, labels)
 
         _, preds = torch.max(outputs, 1)
-        running_loss += loss.item()
-        running_corrects += torch.sum(preds == labels)
-    epoch_loss = running_loss / dataset_sizes['valid']
-    print(running_corrects.double())
-    epoch_acc = running_corrects.double() / dataset_sizes['valid']
+
+        outputs = loss(outputs, labels)
+        total_loss += outputs.item()
+        total_corrects += torch.sum(preds == labels)
+    epoch_loss = total_loss / dataset_sizes[mode]
+    epoch_acc = total_corrects.double() / dataset_sizes[mode]
     print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-        'valid', epoch_loss, epoch_acc))
+        mode, epoch_loss, epoch_acc))
     print('-' * 10)
     print()
 
 
-def test_model(model, criterion):
-    best_acc = 0.0
-    print('-' * 10)
-
-    running_loss = 0.0
-    running_corrects = 0
-    model = model.to(device)
-    for inputs, labels in testdataloader:
-        inputs = inputs.to(device)
-        labels = labels.to(device)
-        model.eval()
-        with torch.no_grad():
-            outputs = model(inputs)
-        loss = criterion(outputs, labels)
-
-        _, preds = torch.max(outputs, 1)
-        running_loss += loss.item()
-        running_corrects += torch.sum(preds == labels)
-    epoch_loss = running_loss / dataset_sizes['test']
-    print(running_corrects.double())
-    epoch_acc = running_corrects.double() / dataset_sizes['test']
-    print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-        'test', epoch_loss, epoch_acc))
-    print('-' * 10)
-    print()
+def valid_model(model):
+    test(model, 'valid')
 
 
-def train_model(model, criterion, optimizer, num_epochs=5):
+def test_model(model):
+    test(model, 'test')
+
+
+def train_model(model, optimizer, num_epochs=5):
     since = time.time()
     best_acc = 0.0
     for epoch in range(num_epochs):
         if (epoch + 1) % 5 == 0:
-            test_model(model, criterion)
+            valid_model(model)
         print('-' * 10)
         print('Epoch {}/{}'.format(epoch + 1, num_epochs))
 
-        running_loss = 0.0
-        running_corrects = 0
+        total_loss = 0.0
+        total_corrects = 0
         model = model.to(device)
         for i, (inputs, labels) in enumerate(traindataloader):
             inputs = inputs.to(device)
@@ -84,18 +68,20 @@ def train_model(model, criterion, optimizer, num_epochs=5):
             model.train()
             optimizer.zero_grad()
             outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            print(i)
-            loss.backward()
-            optimizer.step()
-
+            
             _, preds = torch.max(outputs, 1)
-            running_loss += loss.item()
-            running_corrects += torch.sum(preds == labels)
-        epoch_loss = running_loss / dataset_sizes['train']
+            
+            outputs = loss(outputs, labels)
+            outputs.backward()
+            optimizer.step()
+            total_loss += outputs.item()
+            total_corrects += torch.sum(preds == labels)
+            if (i + 1) % 100 == 0:
+                print("batch: %d / %d Loss: %.4f" % ((i + 1), len(traindataloader), outputs.item()))
+        epoch_loss = total_loss / dataset_sizes['train']
         print(dataset_sizes['train'])
-        print(running_corrects.double())
-        epoch_acc = running_corrects.double() / dataset_sizes['train']
+        print(total_corrects.double())
+        epoch_acc = total_corrects.double() / dataset_sizes['train']
         best_acc = max(best_acc, epoch_acc)
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             'train', epoch_loss, epoch_acc))
@@ -111,9 +97,17 @@ def train_model(model, criterion, optimizer, num_epochs=5):
 
 
 if __name__ == "__main__":
-    epochs = 1
-    model = train_model(net, criterion, optimizer, epochs)
 
-    valid_model(model, criterion)
+    # load and train
+    model = torch.load('model.pth', map_location=torch.device('cpu'))
+    epochs = 0
+    model = train_model(model, optimizer, epochs)
+    test_model(model)
 
-    torch.save(model, 'model.pkl')
+    # train only
+    epochs = 20
+    model = train_model(net, optimizer, epochs)
+    test_model(model)
+
+    # save
+    torch.save(model, 'model.pth')

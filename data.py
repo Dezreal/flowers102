@@ -32,7 +32,7 @@ data_transforms = {
 }
 
 # 数据目录
-data_dir = "/Users/Konyaka/Downloads/data/"
+data_dir = "/Users/Konyaka/Downloads/flowers102/dataset_split/"
 
 # 获取三个数据集
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
@@ -41,10 +41,9 @@ traindataset = image_datasets['train']
 validdataset = image_datasets['valid']
 testdataset = image_datasets['test']
 
-batch_size = 8
+batch_size = 16
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size,
                                               shuffle=True) for x in ['train', 'valid', 'test']}
-print(dataloaders)
 traindataloader = dataloaders['train']
 validdataloader = dataloaders['valid']
 testdataloader = dataloaders['test']
