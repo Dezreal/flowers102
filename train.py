@@ -3,7 +3,7 @@ import time
 import torch
 from torch import nn
 
-from data import validdataloader, dataset_sizes, testdataloader, traindataloader
+from data import validdataloader, dataset_sizes, testdataloader, traindataloader, batch_size
 from ResNet152 import net
 
 loss = nn.CrossEntropyLoss()
@@ -76,11 +76,9 @@ def train_model(model, optimizer, num_epochs=5):
             optimizer.step()
             total_loss += outputs.item()
             total_corrects += torch.sum(preds == labels)
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 200 == 0:
                 print("batch: %d / %d Loss: %.4f" % ((i + 1), len(traindataloader), outputs.item()))
-        epoch_loss = total_loss / dataset_sizes['train']
-        print(dataset_sizes['train'])
-        print(total_corrects.double())
+        epoch_loss = total_loss * batch_size / dataset_sizes['train']
         epoch_acc = total_corrects.double() / dataset_sizes['train']
         best_acc = max(best_acc, epoch_acc)
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
@@ -99,15 +97,15 @@ def train_model(model, optimizer, num_epochs=5):
 if __name__ == "__main__":
 
     # load and train
-    model = torch.load('model.pth', map_location=torch.device('cpu'))
+    model = torch.load('model20.pth')
     epochs = 0
     model = train_model(model, optimizer, epochs)
     test_model(model)
 
     # train only
-    epochs = 20
-    model = train_model(net, optimizer, epochs)
-    test_model(model)
+    # epochs = 20
+    # model = train_model(net, optimizer, epochs)
+    # test_model(model)
 
     # save
-    torch.save(model, 'model.pth')
+    # torch.save(model, 'model.pth')

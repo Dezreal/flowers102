@@ -41,7 +41,7 @@ traindataset = image_datasets['train']
 validdataset = image_datasets['valid']
 testdataset = image_datasets['test']
 
-batch_size = 16
+batch_size = 8
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size,
                                               shuffle=True) for x in ['train', 'valid', 'test']}
 traindataloader = dataloaders['train']
