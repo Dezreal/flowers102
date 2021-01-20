@@ -52,6 +52,7 @@ def test_model(model):
 
 def train_model(model, optimizer, num_epochs=5):
     since = time.time()
+    model = model.to(device)
     best_acc = 0.0
     for epoch in range(num_epochs):
         if (epoch + 1) % 5 == 0:
@@ -61,7 +62,6 @@ def train_model(model, optimizer, num_epochs=5):
 
         total_loss = 0.0
         total_corrects = 0
-        model = model.to(device)
         for i, (inputs, labels) in enumerate(traindataloader):
             inputs = inputs.to(device)
             labels = labels.to(device)
@@ -97,7 +97,7 @@ def train_model(model, optimizer, num_epochs=5):
 if __name__ == "__main__":
 
     # load and train
-    model = torch.load('model20.pth')
+    model = torch.load('model20.pth', map_location=torch.device('cpu'))
     epochs = 0
     model = train_model(model, optimizer, epochs)
     test_model(model)
