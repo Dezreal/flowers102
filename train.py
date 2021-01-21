@@ -1,6 +1,8 @@
 import time
 
+import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from torch import nn
 
 from data import validdataloader, dataset_sizes, testdataloader, traindataloader, batch_size
@@ -34,7 +36,7 @@ def test(model, mode):
         outputs = loss(outputs, labels)
         total_loss += outputs.item()
         total_corrects += torch.sum(preds == labels)
-    epoch_loss = total_loss / dataset_sizes[mode]
+    epoch_loss = total_loss * batch_size / dataset_sizes[mode]
     epoch_acc = total_corrects.double() / dataset_sizes[mode]
     print('{} Loss: {:.4f} Acc: {:.4f}'.format(
         mode, epoch_loss, epoch_acc))
@@ -52,11 +54,12 @@ def test_model(model):
 
 def train_model(model, optimizer, num_epochs=5):
     since = time.time()
+    x = np.array([])
+    y_lss = np.array([])
+    y_acc = np.array([])
     model = model.to(device)
     best_acc = 0.0
     for epoch in range(num_epochs):
-        if (epoch + 1) % 5 == 0:
-            valid_model(model)
         print('-' * 10)
         print('Epoch {}/{}'.format(epoch + 1, num_epochs))
 
@@ -80,11 +83,18 @@ def train_model(model, optimizer, num_epochs=5):
                 print("batch: %d / %d Loss: %.4f" % ((i + 1), len(traindataloader), outputs.item()))
         epoch_loss = total_loss * batch_size / dataset_sizes['train']
         epoch_acc = total_corrects.double() / dataset_sizes['train']
+        x = np.append(x, epoch + 1)
+        y_acc = np.append(y_acc, epoch_acc)
+        y_lss = np.append(y_lss, epoch_loss)
+        plt.plot(x, y_acc, '-og')
+        plt.plot(x, y_lss, '-or')
+        plt.pause(0.01)
         best_acc = max(best_acc, epoch_acc)
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             'train', epoch_loss, epoch_acc))
-
         print()
+        if (epoch + 1) % 2 == 0:
+            valid_model(model)
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
@@ -105,6 +115,7 @@ if __name__ == "__main__":
     # train only
     # epochs = 20
     # model = train_model(net, optimizer, epochs)
+    # plt.show()
     # test_model(model)
 
     # save
