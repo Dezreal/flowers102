@@ -6,7 +6,6 @@ class Net(nn.Module):
     def __init__(self, model):
         super(Net, self).__init__()
         self.resnet = nn.Sequential(*list(model.children())[:-1])
-        # 可以选择冻结卷积层
         # for p in self.parameters():
         #     p.requires_grad = False
         self.fc = nn.Linear(in_features=2048, out_features=102)
@@ -20,4 +19,3 @@ class Net(nn.Module):
 
 resnet152 = models.resnet152(pretrained=True)
 net = Net(resnet152)
-

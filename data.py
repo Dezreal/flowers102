@@ -1,11 +1,8 @@
-
 import os
 
 import torch
 from torchvision import transforms, datasets
 
-# device = torch.device("cuda:0")
-# 对三种数据集进行不同预处理，对训练数据进行加强
 data_transforms = {
     'train': transforms.Compose([
         transforms.RandomRotation(30),
@@ -31,10 +28,8 @@ data_transforms = {
     ])
 }
 
-# 数据目录
 data_dir = "/Users/Konyaka/Downloads/flowers102/dataset_split/"
 
-# 获取三个数据集
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                           data_transforms[x]) for x in ['train', 'valid', 'test']}
 traindataset = image_datasets['train']
