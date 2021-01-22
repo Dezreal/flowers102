@@ -82,7 +82,7 @@ def train_model(model, optimizer, num_epochs=5):
             if (i + 1) % 200 == 0:
                 print("batch: %d / %d Loss: %.4f" % ((i + 1), len(traindataloader), outputs.item()))
         epoch_loss = total_loss * batch_size / dataset_sizes['train']
-        epoch_acc = total_corrects.double() / dataset_sizes['train']
+        epoch_acc = total_corrects.double().item() / dataset_sizes['train']
         x = np.append(x, epoch + 1)
         y_acc = np.append(y_acc, epoch_acc)
         y_lss = np.append(y_lss, epoch_loss)
@@ -111,12 +111,13 @@ if __name__ == "__main__":
     epochs = 0
     model = train_model(model, optimizer, epochs)
     test_model(model)
+    plt.show()
 
     # train only
     # epochs = 20
     # model = train_model(net, optimizer, epochs)
-    # plt.show()
     # test_model(model)
+    # plt.show()
 
     # save
     # torch.save(model, 'model.pth')
